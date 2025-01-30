@@ -121,26 +121,21 @@ class PSAClient:
             car.status = res
         return res
 
-    def __refresh_vehicle_info(self):
-        if self.info_refresh_rate is not None:
-            if self.refresh_thread and self.refresh_thread.is_alive():
-                logger.debug("refresh_vehicle_info: precedent task still alive")
-                self.refresh_thread.cancel()
-            self.refresh_thread = threading.Timer(self.info_refresh_rate, self.__refresh_vehicle_info)
-            self.refresh_thread.daemon = True
-            self.refresh_thread.start()
-            try:
-                logger.debug("refresh_vehicle_info")
-                for car in self.vehicles_list:
-                    self.get_vehicle_info(car.vin)
-                for callback in self.info_callback:
-                    callback()
-            except BaseException:
-                logger.exception("refresh_vehicle_info: ")
+    # only to be called by PSAClientRefreshThread
+    def refresh_vehicle_info(self):
+        try:
+            logger.debug("refresh_vehicle_info")
+            for car in self.vehicles_list:
+                self.get_vehicle_info(car.vin)
+            for callback in self.info_callback:
+                callback()
+        except BaseException:
+            logger.exception("refresh_vehicle_info: ")
 
     def start_refresh_thread(self):
-        if self.refresh_thread is None:
-            self.__refresh_vehicle_info()
+        if self.refresh_thread is None or not self.refresh_thread.is_alive():
+            self.refresh_thread = PSAClientRefreshThread(self)
+            self.refresh_thread.start()
 
     def get_vehicles(self):
         try:
@@ -237,6 +232,23 @@ class PSAClient:
     def __iter__(self):
         for key, value in self.__dict__.items():
             yield key, value
+
+
+class PSAClientRefreshThread(threading.Thread):
+    def __init__(self, client: PSAClient):
+        super().__init__()
+        self.client = client
+        self.finished = threading.Event()
+
+    def run(self):
+        if self.client.info_refresh_rate is None:
+            return
+        while not self.finished.is_set():
+            self.client.refresh_vehicle_info()
+            self.finished.wait(self.client.info_refresh_rate)
+
+    def stop(self):
+        self.finished.set()
 
 
 class PSAClientEncoder(JSONEncoder):
