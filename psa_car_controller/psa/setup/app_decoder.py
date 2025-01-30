@@ -64,7 +64,7 @@ class InitialSetup:
             raise e
         except Exception as ex:
             msg = traceback.format_exc() + f"\nHOST_BRANDID : {apk_parser.host_brandid_prod} " \
-                                           f"sitecode: {apk_parser.site_code}"
+                f"sitecode: {apk_parser.site_code}"
             try:
                 msg += res.text
             except BaseException:

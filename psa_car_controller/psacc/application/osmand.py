@@ -44,7 +44,7 @@ class OsmAndApi:
                     "lon": car.status.last_position.geometry.coordinates[0],
                     "altitude": car.status.last_position.geometry.coordinates[2]
                 }
-                if car.has_fuel:
+                if car.has_fuel():
                     fuel = car.status.get_energy('Fuel')
                     data["fuel"] = fuel.level
                 if car.has_battery():
