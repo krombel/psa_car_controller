@@ -1,0 +1,15 @@
+/docs
+/tests
+/.github
+/.venv
+
+/.coveragerc
+/.eslintrc.yml
+/.gitignore
+/.pre-commit-config-yaml
+/.prospector.yaml
+/api_spec.md
+/docker-compose.yml
+/FAQ.md
+/psa-car-controller.service
+/README.md
