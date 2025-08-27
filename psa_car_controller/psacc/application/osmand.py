@@ -20,6 +20,8 @@ class OsmAndApi:
     def enable_osmand(self, vin, enable):
         if enable:
             self.osmand_enable_vin.add(vin)
+            if not self.__server_uri:
+                self.__server_uri = "http://traccar:5055"
         else:
             self.osmand_enable_vin.discard(vin)
 
