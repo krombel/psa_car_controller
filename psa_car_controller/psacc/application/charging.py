@@ -61,13 +61,21 @@ class Charging:
     def record_charging(car: Car, charging_status, charge_date: datetime, level, latitude,
                         # pylint: disable=too-many-locals,too-many-positional-arguments
                         longitude, country_code, charging_mode, charging_rate, autonomy, mileage):
-        conn = Database.get_db()
         charge_date = charge_date.replace(microsecond=0)
+        logger.debug("record_charging %s %s %s %s %s %s %s %s %s %s", car.vin, charging_status, charge_date, level,
+                     latitude, longitude, country_code, charging_mode, charging_rate, autonomy)
+        conn = Database.get_db()
         if charging_status == "InProgress":
             last_charge = Database.get_last_charge(car.vin)
             if Charging.is_charge_ended(last_charge):
-                conn.execute("INSERT INTO battery(start_at,start_level,charging_mode,VIN,mileage) VALUES(?,?,?,?,?)",
+                if last_charge.start_at != charge_date:
+                    conn.execute("INSERT INTO battery(start_at,start_level,charging_mode,VIN,mileage) VALUES(?,?,?,?,?)",
                              (charge_date, level, charging_mode, car.vin, mileage))
+                else:
+                    # same start time, update and mark as not ended
+                    conn.execute("UPDATE battery SET charging_mode=?,mileage=?,stop_at=NULL WHERE VIN=? AND start_at=?",
+                                 (charging_mode, mileage, car.vin, last_charge.start_at))
+
                 start_at = charge_date
             else:
                 start_at = last_charge.start_at
